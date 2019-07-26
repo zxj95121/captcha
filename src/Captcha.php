@@ -166,6 +166,8 @@ class Captcha
 
         Redis::select(1);
         Redis::set($origin, $code);
+        //添加过期时间600秒
+        Redis::expire($origin, 600);
 
         $hash = password_hash($code, PASSWORD_BCRYPT, array('cost' => 10));
 
@@ -252,7 +254,7 @@ class Captcha
         $result = $this->test($input, $origin);
         Redis::select(1);
         Redis::del($origin);
-
+        //刪除redis的值
         return $result;
     }
 
