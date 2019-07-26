@@ -252,8 +252,11 @@ class Captcha
     public function _check($input, $origin)
     {
         $result = $this->_test($input, $origin);
-        Redis::select(1);
-        Redis::del($origin);
+        if (true) {
+            //如果真实，则删除
+            Redis::select(1);
+            Redis::del($origin);
+        }
         //刪除redis的值
         return $result;
     }
