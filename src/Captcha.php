@@ -164,16 +164,16 @@ class Captcha
     {
         $code = $this->generate();
 
-        Redis::select(1);
-        Redis::set($origin, $code);
-        //添加过期时间600秒 
-        Redis::expire($origin, 600);
-
         $hash = password_hash($code, PASSWORD_BCRYPT, array('cost' => 10));
 
         if ($hash === false) {
             throw new \RuntimeException('Bcrypt hashing not supported.');
         }
+
+        Redis::select(1);
+        Redis::set($origin, $hash);
+        //添加过期时间600秒 
+        Redis::expire($origin, 600);
 
         return new Image($this->build($code));
     }
