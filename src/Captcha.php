@@ -251,7 +251,7 @@ class Captcha
     {
         $result = $this->test($input, $origin);
         Redis::select(1);
-        Redis::del($orign);
+        Redis::del($origin);
 
         return $result;
     }
