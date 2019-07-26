@@ -251,7 +251,7 @@ class Captcha
      */
     public function _check($input, $origin)
     {
-        $result = $this->test($input, $origin);
+        $result = $this->_test($input, $origin);
         Redis::select(1);
         Redis::del($origin);
         //刪除redis的值
