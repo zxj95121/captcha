@@ -3,6 +3,7 @@
 namespace Vicens\Captcha;
 
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Redis;
 
 class Captcha
 {
@@ -155,6 +156,27 @@ class Captcha
     }
 
     /**
+     * 前后端分离生成验证码
+     *
+     * @return Image
+     */
+    public function _make($origin)
+    {
+        $code = $this->generate();
+
+        Redis::select(1);
+        Redis::set($origin, $code);
+
+        $hash = password_hash($code, PASSWORD_BCRYPT, array('cost' => 10));
+
+        if ($hash === false) {
+            throw new \RuntimeException('Bcrypt hashing not supported.');
+        }
+
+        return new Image($this->build($code));
+    }
+
+    /**
      * 仅测试正确性, 不删除验证码
      *
      * @param string $input
@@ -180,6 +202,32 @@ class Captcha
     }
 
     /**
+     * 仅测试正确性, 不删除验证码
+     *
+     * @param string $input
+     * @return bool
+     */
+    public function _test($input, $origin)
+    {
+        Redis::select(1);
+        if ($this->config['debug']) {
+            return true;
+        } elseif (!(Redis::exists($origin) && $input)) {
+            return false;
+        }
+
+        $code = Redis::get($origin);
+
+        if ($this->config['strict']) {
+            // 开启严格模式
+            password_verify($input, $code);
+        }
+
+        //返回验证结果
+        return password_verify(strtoupper($input), $code);
+    }
+
+    /**
      * 检测正确性,并删除验证码
      *
      * @param string $input
@@ -189,6 +237,21 @@ class Captcha
     {
         $result = $this->test($input);
         Session::forget(self::SESSION_NAME);
+
+        return $result;
+    }
+
+    /**
+     * 检测正确性,并删除验证码
+     *
+     * @param string $input
+     * @return bool
+     */
+    public function _check($input, $origin)
+    {
+        $result = $this->test($input, $origin);
+        Redis::select(1);
+        Redis::del($orign);
 
         return $result;
     }
